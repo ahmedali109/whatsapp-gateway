@@ -1,0 +1,153 @@
+services:
+  # =========================================================
+  # NestJS PostgreSQL
+  # =========================================================
+  postgres:
+    image: postgres:17
+    container_name: whatsapp-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # =========================================================
+  # Redis
+  # BullMQ -> DB 0
+  # Evolution -> DB 1
+  # =========================================================
+  redis:
+    image: redis:7
+    container_name: whatsapp-redis
+    restart: unless-stopped
+
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+
+    ports:
+      - "127.0.0.1:${REDIS_PORT}:6379"
+
+    volumes:
+      - redis_data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  # =========================================================
+  # Evolution API PostgreSQL
+  # Separate database from the NestJS application database
+  # =========================================================
+  evolution-postgres:
+    image: postgres:17
+    container_name: evolution-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${EVOLUTION_DB_USER}
+      POSTGRES_PASSWORD: ${EVOLUTION_DB_PASSWORD}
+      POSTGRES_DB: ${EVOLUTION_DB_NAME}
+
+    ports:
+      - "127.0.0.1:${EVOLUTION_DB_PORT}:5432"
+
+    volumes:
+      - evolution_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${EVOLUTION_DB_USER} -d ${EVOLUTION_DB_NAME}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # =========================================================
+  # Evolution API
+  # =========================================================
+  evolution-api:
+    image: evoapicloud/evolution-api:v2.3.6
+    platform: linux/amd64
+    container_name: evolution-api
+    restart: unless-stopped
+
+    depends_on:
+      evolution-postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    ports:
+      - "127.0.0.1:${EVOLUTION_PORT}:8080"
+
+    environment:
+      # Server
+      SERVER_TYPE: http
+      SERVER_PORT: 8080
+      SERVER_URL: http://localhost:${EVOLUTION_PORT}
+
+      # Authentication
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
+
+      # Database
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+
+      DATABASE_CONNECTION_URI: >-
+        postgresql://${EVOLUTION_DB_USER}:${EVOLUTION_DB_PASSWORD}@evolution-postgres:5432/${EVOLUTION_DB_NAME}
+
+      DATABASE_CONNECTION_CLIENT_NAME: evolution
+
+      # Persistence
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+
+      # Redis
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://redis:6379/1
+      CACHE_REDIS_PREFIX_KEY: evolution
+      CACHE_REDIS_SAVE_INSTANCES: "false"
+
+      CACHE_LOCAL_ENABLED: "false"
+
+    volumes:
+      - evolution_instances:/evolution/instances
+
+
+# =========================================================
+# Persistent Volumes
+# =========================================================
+volumes:
+  postgres_data:
+  redis_data:
+  evolution_postgres_data:
+  evolution_instances:
