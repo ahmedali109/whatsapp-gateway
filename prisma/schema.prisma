@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MessageDirection {
+  OUTBOUND
+  INBOUND
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model Message {
+  id                String  @id @default(uuid())
+  providerMessageId String? @unique
+
+  recipient String
+  content   String
+
+  direction MessageDirection @default(OUTBOUND)
+  status    MessageStatus    @default(PENDING)
+
+  errorCode    String?
+  errorMessage String?
+
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  failedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([recipient])
+  @@index([status])
+  @@index([createdAt])
+}

@@ -7,6 +7,8 @@ const envSchema = z.object({
 
   PORT: z.coerce.number().int().positive().default(3000),
 
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+
   EVOLUTION_API_URL: z.url(),
 
   EVOLUTION_API_KEY: z.string().min(1, 'EVOLUTION_API_KEY is required'),

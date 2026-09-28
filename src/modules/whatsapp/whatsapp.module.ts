@@ -6,6 +6,7 @@ import { EvolutionProvider } from './providers/evolution.provider';
 import { WHATSAPP_PROVIDER } from './providers/whatsapp-provider.interface';
 import { WhatsappController } from './whatsapp.controller';
 import { WhatsappService } from './whatsapp.service';
+import { MessageRepository } from './repositories/message.repository';
 
 @Module({
   imports: [HttpModule],
@@ -16,6 +17,7 @@ import { WhatsappService } from './whatsapp.service';
     WhatsappService,
     EvolutionClient,
     EvolutionProvider,
+    MessageRepository,
     {
       provide: WHATSAPP_PROVIDER,
       useExisting: EvolutionProvider,
