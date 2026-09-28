@@ -1,10 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { firstValueFrom } from 'rxjs';
-import type { EvolutionSendTextResponse } from '../types/evolution-message.types';
-import { EvolutionApiException } from '../exceptions/evolution-api.exception';
 import axios from 'axios';
+import { firstValueFrom } from 'rxjs';
+import type { EnvironmentVariables } from '../../../config/env.types';
+import { EvolutionApiException } from '../exceptions/evolution-api.exception';
+import type { EvolutionSendTextResponse } from '../types/evolution-message.types';
 
 @Injectable()
 export class EvolutionClient {
@@ -17,17 +18,12 @@ export class EvolutionClient {
 
   constructor(
     private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService<EnvironmentVariables, true>,
   ) {
-    this.baseUrl = this.configService.getOrThrow<string>('EVOLUTION_API_URL');
-
-    this.apiKey = this.configService.getOrThrow<string>('EVOLUTION_API_KEY');
-
-    this.instance = this.configService.getOrThrow<string>('EVOLUTION_INSTANCE');
-
-    this.timeout = this.configService.getOrThrow<number>(
-      'EVOLUTION_REQUEST_TIMEOUT',
-    );
+    this.baseUrl = this.configService.getOrThrow('EVOLUTION_API_URL');
+    this.apiKey = this.configService.getOrThrow('EVOLUTION_API_KEY');
+    this.instance = this.configService.getOrThrow('EVOLUTION_INSTANCE');
+    this.timeout = this.configService.getOrThrow('EVOLUTION_REQUEST_TIMEOUT');
   }
 
   async sendText(
@@ -51,6 +47,7 @@ export class EvolutionClient {
           },
         ),
       );
+
       return response.data;
     } catch (error) {
       this.handleError(error);
@@ -60,7 +57,9 @@ export class EvolutionClient {
   private handleError(error: unknown): never {
     if (axios.isAxiosError(error)) {
       const statusCode = error.response?.status;
+
       this.logger.error(`Evolution API request failed: ${error.message}`);
+
       throw new EvolutionApiException(
         statusCode
           ? `Evolution API returned status ${statusCode}`
@@ -69,6 +68,7 @@ export class EvolutionClient {
         error.response?.data,
       );
     }
+
     throw error;
   }
 }

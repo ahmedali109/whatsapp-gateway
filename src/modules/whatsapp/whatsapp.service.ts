@@ -1,30 +1,19 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { EvolutionClient } from './clients/evolution.client';
-import { SendTextResult } from './types/whatsapp-message.types';
-import { EvolutionApiException } from './exceptions/evolution-api.exception';
+import {
+  WHATSAPP_PROVIDER,
+  type WhatsAppProvider,
+} from './providers/whatsapp-provider.interface';
+import type { SendTextResult } from './types/whatsapp-message.types';
 
 @Injectable()
 export class WhatsappService {
-  constructor(private readonly evolutionClient: EvolutionClient) {}
+  constructor(
+    @Inject(WHATSAPP_PROVIDER)
+    private readonly provider: WhatsAppProvider,
+  ) {}
 
   async sendText(number: string, text: string): Promise<SendTextResult> {
-    try {
-      const response = await this.evolutionClient.sendText(number, text);
-      return {
-        messageId: response.key.id,
-        recipient: number,
-        status: response.status,
-      };
-    } catch (error) {
-      if (error instanceof EvolutionApiException) {
-        throw new ServiceUnavailableException({
-          code: 'WHATSAPP_PROVIDER_UNAVAILABLE',
-          message: 'WhatsApp provider is currently unavailable',
-        });
-      }
-
-      throw error;
-    }
+    return this.provider.sendText(number, text);
   }
 }
