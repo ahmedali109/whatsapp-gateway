@@ -113,4 +113,22 @@ export class MessageRepository {
       where: { id },
     });
   }
+
+  async findByProviderMessageId(providerMessageId: string) {
+    return this.prisma.message.findUnique({
+      where: {
+        providerMessageId,
+      },
+    });
+  }
+
+  async markAsDelivered(id: string) {
+    return this.prisma.message.update({
+      where: { id },
+      data: {
+        status: 'DELIVERED',
+        deliveredAt: new Date(),
+      },
+    });
+  }
 }

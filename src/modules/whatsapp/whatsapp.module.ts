@@ -13,6 +13,8 @@ import { WhatsappQueueService } from './queue/whatsapp-queue.service';
 import { WhatsappProcessor } from './queue/whatsapp.processor';
 import { ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from '../../config/env.types';
+import { EvolutionWebhookController } from './webhooks/evolution-webhook.controller';
+import { EvolutionWebhookService } from './webhooks/evolution-webhook.service';
 
 @Module({
   imports: [
@@ -35,7 +37,10 @@ import { EnvironmentVariables } from '../../config/env.types';
     }),
   ],
 
-  controllers: [WhatsappController],
+  controllers: [
+    WhatsappController, 
+    EvolutionWebhookController
+  ],
 
   providers: [
     WhatsappService,
@@ -44,6 +49,8 @@ import { EnvironmentVariables } from '../../config/env.types';
 
     EvolutionClient,
     EvolutionProvider,
+
+    EvolutionWebhookService,
 
     MessageRepository,
     {
