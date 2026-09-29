@@ -14,6 +14,8 @@ enum MessageDirection {
 
 enum MessageStatus {
   PENDING
+  QUEUED
+  PROCESSING
   SENT
   DELIVERED
   READ
@@ -23,7 +25,8 @@ enum MessageStatus {
 model Message {
   id                String  @id @default(uuid())
   providerMessageId String? @unique
-
+  idempotencyKey String? @unique
+  
   recipient String
   content   String
 

@@ -4,6 +4,10 @@ export interface EnvironmentVariables {
 
   DATABASE_URL: string;
 
+  REDIS_HOST: string;
+  REDIS_PORT: number;
+  REDIS_DB: number;
+
   EVOLUTION_API_URL: string;
   EVOLUTION_API_KEY: string;
   EVOLUTION_INSTANCE: string;
